@@ -18,13 +18,13 @@ const typeDefs = `
 
   type Query {
     hello(name: String): String!
-    user(id: Int): User!
+    user(id: Int!): User!
     users: [User!]!
   }
 
   type Mutation {
     createUser(firstName: String!, profile: ProfileInput ): User!
-    updateUser(id: Int!, firstName: String): Boolean
+    updateUser(id: Int!, firstName: String!): Boolean
     deleteUser(id: Int!): Boolean
   }
 
@@ -35,8 +35,9 @@ const typeDefs = `
 
 const resolvers: ResolverMap = {
   Query: {
-    hello: (_: any, { name }: any) => `hello ${name || 'World'}`,
-    user: async (_, { id }) => {
+    hello: (_, { name }: GQL.IHelloOnQueryArguments) =>
+      `hello ${name || 'World'}`,
+    user: async (_, { id }: GQL.IUserOnQueryArguments) => {
       const user = await User.findOne({ id }, { relations: ['profile'] });
       console.log(user);
       return user;
@@ -44,7 +45,7 @@ const resolvers: ResolverMap = {
     users: () => User.find({ relations: ['profile'] })
   },
   Mutation: {
-    createUser: async (_, args) => {
+    createUser: async (_, args: GQL.ICreateUserOnMutationArguments) => {
       const profile = Profile.create({ ...args.profile });
       await profile.save();
       const user = User.create({
@@ -56,7 +57,7 @@ const resolvers: ResolverMap = {
       console.log(user);
       return user;
     },
-    updateUser: (_, { id, ...args }) => {
+    updateUser: (_, { id, ...args }: GQL.IUpdateUserOnMutationArguments) => {
       try {
         User.update({ id }, { ...args });
       } catch (err) {
@@ -65,7 +66,7 @@ const resolvers: ResolverMap = {
       }
       return true;
     },
-    deleteUser: (_, { id }) => {
+    deleteUser: (_, { id }: GQL.IDeleteUserOnMutationArguments) => {
       try {
         User.delete({ id });
       } catch (err) {

@@ -10,13 +10,13 @@ type Profile {
 
 type Query {
   hello(name: String): String!
-  user(id: Int): User!
+  user(id: Int!): User!
   users: [User!]!
 }
 
 type Mutation {
   createUser(firstName: String!, profile: ProfileInput): User!
-  updateUser(id: Int!, firstName: String): Boolean
+  updateUser(id: Int!, firstName: String!): Boolean
   deleteUser(id: Int!): Boolean
 }
 
