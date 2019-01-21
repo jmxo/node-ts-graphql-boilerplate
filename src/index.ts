@@ -18,13 +18,13 @@ const typeDefs = `
 
   type Query {
     hello(name: String): String!
-    user(id: Int): User!
+    user(id: Int!): User!
     users: [User!]!
   }
 
   type Mutation {
     createUser(firstName: String!, profile: ProfileInput ): User!
-    updateUser(id: Int!, firstName: String): Boolean
+    updateUser(id: Int!, firstName: String!): Boolean
     deleteUser(id: Int!): Boolean
   }
 
@@ -39,6 +39,9 @@ const resolvers: ResolverMap = {
     user: async (_, { id }) => {
       const user = await User.findOne({ id }, { relations: ['profile'] });
       console.log(user);
+      if (user === undefined) {
+        throw new Error(); // throw apollo error?
+      }
       return user;
     },
     users: () => User.find({ relations: ['profile'] })
