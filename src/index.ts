@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { GraphQLServer } from 'graphql-yoga';
 import { createConnection } from 'typeorm';
-import { ResolverMap } from './types/ResolverType';
 import { User } from './entity/User';
 import { Profile } from './entity/Profile';
+import { IResolvers } from './types/schema';
 
 const typeDefs = `
   type User {
@@ -33,9 +33,9 @@ const typeDefs = `
   }
 `;
 
-const resolvers: ResolverMap = {
+const resolvers: IResolvers = {
   Query: {
-    hello: (_: any, { name }: any) => `hello ${name || 'World'}`,
+    hello: (_, { name }) => `hello ${name || 'World'}`,
     user: async (_, { id }) => {
       const user = await User.findOne({ id }, { relations: ['profile'] });
       console.log(user);
@@ -80,7 +80,7 @@ const resolvers: ResolverMap = {
   }
 };
 
-const server = new GraphQLServer({ typeDefs, resolvers });
+const server = new GraphQLServer({ typeDefs, resolvers: resolvers as any });
 
 createConnection().then(() => {
   server.start(() => console.log('Server is running on localhost:4000'));
