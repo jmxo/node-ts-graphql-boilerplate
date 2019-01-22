@@ -1,11 +1,23 @@
 /* tslint:disable */
 // THIS IS A GENERATED FILE, DO NOT EDIT!
-// Generated in 2019-01-22T10:31:44+02:00
+// Generated in 2019-01-22T19:38:11+02:00
 export type Maybe<T> = T | null;
 
 export interface ProfileInput {
   favoriteColor: string;
 }
+
+export enum CacheControlScope {
+  Public = "PUBLIC",
+  Private = "PRIVATE"
+}
+
+/** The `Upload` scalar type represents a file upload. */
+export type Upload = any;
+
+// ====================================================
+// Scalars
+// ====================================================
 
 // ====================================================
 // Types
@@ -13,6 +25,8 @@ export interface ProfileInput {
 
 export interface Query {
   hello: string;
+
+  authHello: string;
 
   user: User;
 
@@ -63,7 +77,11 @@ export interface RegisterMutationArgs {
   password: string;
 }
 
-import { GraphQLResolveInfo } from "graphql";
+import {
+  GraphQLResolveInfo,
+  GraphQLScalarType,
+  GraphQLScalarTypeConfig
+} from "graphql";
 
 export type Resolver<Result, Parent = {}, Context = {}, Args = {}> = (
   parent: Parent,
@@ -118,6 +136,8 @@ export namespace QueryResolvers {
   export interface Resolvers<Context = {}, TypeParent = {}> {
     hello?: HelloResolver<string, TypeParent, Context>;
 
+    authHello?: AuthHelloResolver<string, TypeParent, Context>;
+
     user?: UserResolver<User, TypeParent, Context>;
 
     users?: UsersResolver<User[], TypeParent, Context>;
@@ -133,6 +153,11 @@ export namespace QueryResolvers {
     name?: Maybe<string>;
   }
 
+  export type AuthHelloResolver<
+    R = string,
+    Parent = {},
+    Context = {}
+  > = Resolver<R, Parent, Context>;
   export type UserResolver<R = User, Parent = {}, Context = {}> = Resolver<
     R,
     Parent,
@@ -229,6 +254,17 @@ export namespace MutationResolvers {
   }
 }
 
+export type CacheControlDirectiveResolver<Result> = DirectiveResolverFn<
+  Result,
+  CacheControlDirectiveArgs,
+  {}
+>;
+export interface CacheControlDirectiveArgs {
+  maxAge?: Maybe<number>;
+
+  scope?: Maybe<CacheControlScope>;
+}
+
 /** Directs the executor to skip this field or fragment when the `if` argument is true. */
 export type SkipDirectiveResolver<Result> = DirectiveResolverFn<
   Result,
@@ -262,14 +298,21 @@ export interface DeprecatedDirectiveArgs {
   reason?: string;
 }
 
+export interface UploadScalarConfig
+  extends GraphQLScalarTypeConfig<Upload, any> {
+  name: "Upload";
+}
+
 export interface IResolvers<Context = {}> {
   Query?: QueryResolvers.Resolvers<Context>;
   User?: UserResolvers.Resolvers<Context>;
   Profile?: ProfileResolvers.Resolvers<Context>;
   Mutation?: MutationResolvers.Resolvers<Context>;
+  Upload?: GraphQLScalarType;
 }
 
 export interface IDirectiveResolvers<Result> {
+  cacheControl?: CacheControlDirectiveResolver<Result>;
   skip?: SkipDirectiveResolver<Result>;
   include?: IncludeDirectiveResolver<Result>;
   deprecated?: DeprecatedDirectiveResolver<Result>;

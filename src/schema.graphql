@@ -10,6 +10,7 @@ type Profile {
 
 type Query {
   hello(name: String): String!
+  authHello: String!
   user(id: Int!): User!
   users: [User!]!
 }

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { GraphQLServer } from 'graphql-yoga';
+import { ApolloServer } from 'apollo-server-express';
 import { createConnection } from 'typeorm';
 import { importSchema } from 'graphql-import';
 import * as bcrypt from 'bcryptjs';
@@ -7,16 +7,34 @@ import * as path from 'path';
 import * as jwt from 'jsonwebtoken';
 import { User } from './entity/User';
 import { IResolvers } from './types/schema';
-import { Response } from 'express';
+import * as express from 'express';
+import * as cookieParser from 'cookie-parser';
 
 const SALT = 12;
 const JWT_SECRET = 'aslkdfjaklsjdflk';
 
 const typeDefs = importSchema(path.join(__dirname, './schema.graphql'));
 
-const resolvers: IResolvers<{ res: Response }> = {
+interface Request extends express.Request {
+  userId: number;
+}
+
+interface Context {
+  req: Request;
+  res: express.Response;
+  userId: number;
+}
+
+const resolvers: IResolvers<Context> = {
   Query: {
-    hello: (_, { name }) => `hello ${name || 'World'}`
+    hello: (_, { name }) => `hello ${name || 'World'}`,
+    authHello: (_, __, { userId }) => {
+      if (userId) {
+        return `Cookie found! Your id is: ${userId}`;
+      } else {
+        return 'Could not find cookie :(';
+      }
+    }
   },
   Mutation: {
     register: async (_, args, { res }) => {
@@ -48,20 +66,39 @@ const resolvers: IResolvers<{ res: Response }> = {
   }
 };
 
-const server = new GraphQLServer({
+const PORT = 4000;
+
+const app = express();
+
+app.use('/graphql', cookieParser(), (req: any, _, next) => {
+  try {
+    const { userId }: any = jwt.verify(req.cookies.id, JWT_SECRET);
+    req.userId = userId;
+  } catch (err) {
+    console.log(err);
+  }
+  return next();
+});
+
+const server = new ApolloServer({
   typeDefs,
-  resolvers: resolvers as any,
-  context: ({ response }) => ({ res: response })
+  resolvers,
+  context: ({ req, res }: Context) => ({
+    res,
+    userId: req.userId
+  })
+});
+
+server.applyMiddleware({
+  app,
+  cors: {
+    credentials: true,
+    origin: 'http://localhost:3000'
+  }
 });
 
 createConnection().then(() => {
-  server.start(
-    {
-      cors: {
-        credentials: true,
-        origin: 'http://localhost:3000'
-      }
-    },
-    () => console.log('Server is running on localhost:4000')
-  );
+  app.listen({ port: PORT }, () => {
+    console.log(`🚀 Server ready at http://localhost:4000`);
+  });
 });
