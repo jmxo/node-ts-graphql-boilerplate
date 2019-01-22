@@ -1,87 +1,67 @@
 import 'reflect-metadata';
 import { GraphQLServer } from 'graphql-yoga';
 import { createConnection } from 'typeorm';
+import { importSchema } from 'graphql-import';
+import * as bcrypt from 'bcryptjs';
+import * as path from 'path';
+import * as jwt from 'jsonwebtoken';
 import { User } from './entity/User';
-import { Profile } from './entity/Profile';
 import { IResolvers } from './types/schema';
+import { Response } from 'express';
 
-const typeDefs = `
-  type User {
-    id: Int!
-    firstName: String!
-    profile: Profile
-  }
+const SALT = 12;
+const JWT_SECRET = 'aslkdfjaklsjdflk';
 
-  type Profile {
-    favoriteColor: String!
-  }
+const typeDefs = importSchema(path.join(__dirname, './schema.graphql'));
 
-  type Query {
-    hello(name: String): String!
-    user(id: Int!): User!
-    users: [User!]!
-  }
-
-  type Mutation {
-    createUser(firstName: String!, profile: ProfileInput ): User!
-    updateUser(id: Int!, firstName: String!): Boolean
-    deleteUser(id: Int!): Boolean
-  }
-
-  input ProfileInput {
-    favoriteColor: String!
-  }
-`;
-
-const resolvers: IResolvers = {
+const resolvers: IResolvers<{ res: Response }> = {
   Query: {
-    hello: (_, { name }) => `hello ${name || 'World'}`,
-    user: async (_, { id }) => {
-      const user = await User.findOne({ id }, { relations: ['profile'] });
-      console.log(user);
-      if (user === undefined) {
-        throw new Error(); // throw apollo error?
-      }
-      return user;
-    },
-    users: () => User.find({ relations: ['profile'] })
+    hello: (_, { name }) => `hello ${name || 'World'}`
   },
   Mutation: {
-    createUser: async (_, args) => {
-      const profile = Profile.create({ ...args.profile });
-      await profile.save();
+    register: async (_, args, { res }) => {
+      const password = await bcrypt.hash(args.password, SALT);
+
       const user = User.create({
-        firstName: args.firstName,
-        profileId: profile.id
+        username: args.username,
+        password
       });
-      user.profile = profile;
+
       await user.save();
-      console.log(user);
-      return user;
-    },
-    updateUser: (_, { id, ...args }) => {
-      try {
-        User.update({ id }, { ...args });
-      } catch (err) {
-        console.log(err);
-        return false;
-      }
-      return true;
-    },
-    deleteUser: (_, { id }) => {
-      try {
-        User.delete({ id });
-      } catch (err) {
-        console.log(err);
-        return false;
-      }
+
+      const token = jwt.sign(
+        {
+          userId: user.id
+        },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.cookie('id', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV !== 'development',
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+      });
+
       return true;
     }
   }
 };
 
-const server = new GraphQLServer({ typeDefs, resolvers: resolvers as any });
+const server = new GraphQLServer({
+  typeDefs,
+  resolvers: resolvers as any,
+  context: ({ response }) => ({ res: response })
+});
 
 createConnection().then(() => {
-  server.start(() => console.log('Server is running on localhost:4000'));
+  server.start(
+    {
+      cors: {
+        credentials: true,
+        origin: 'http://localhost:3000'
+      }
+    },
+    () => console.log('Server is running on localhost:4000')
+  );
 });

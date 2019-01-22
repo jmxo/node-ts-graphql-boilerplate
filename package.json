@@ -12,6 +12,9 @@
   "license": "ISC",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.17",
+    "@types/bcryptjs": "^2.4.2",
+    "@types/express": "^4.16.0",
+    "@types/jsonwebtoken": "^8.3.0",
     "@types/node": "^8.0.29",
     "@types/ws": "^6.0.1",
     "graphql-code-generator": "^0.16.0",
@@ -27,7 +30,11 @@
     "typescript": "^3.2.4"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.16.4",
+    "graphql-import": "^0.7.1",
     "graphql-yoga": "^1.17.0",
+    "jsonwebtoken": "^8.4.0",
     "pg": "^7.8.0",
     "reflect-metadata": "^0.1.10",
     "typeorm": "0.2.11"

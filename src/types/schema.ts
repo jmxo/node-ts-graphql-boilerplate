@@ -1,6 +1,6 @@
 /* tslint:disable */
 // THIS IS A GENERATED FILE, DO NOT EDIT!
-// Generated in 2019-01-21T11:40:53+02:00
+// Generated in 2019-01-22T10:31:44+02:00
 export type Maybe<T> = T | null;
 
 export interface ProfileInput {
@@ -32,11 +32,11 @@ export interface Profile {
 }
 
 export interface Mutation {
-  createUser: User;
-
   updateUser?: Maybe<boolean>;
 
   deleteUser?: Maybe<boolean>;
+
+  register: boolean;
 }
 
 // ====================================================
@@ -49,18 +49,18 @@ export interface HelloQueryArgs {
 export interface UserQueryArgs {
   id: number;
 }
-export interface CreateUserMutationArgs {
-  firstName: string;
-
-  profile?: Maybe<ProfileInput>;
-}
 export interface UpdateUserMutationArgs {
   id: number;
 
-  firstName: string;
+  firstName?: Maybe<string>;
 }
 export interface DeleteUserMutationArgs {
   id: number;
+}
+export interface RegisterMutationArgs {
+  username: string;
+
+  password: string;
 }
 
 import { GraphQLResolveInfo } from "graphql";
@@ -190,22 +190,11 @@ export namespace ProfileResolvers {
 
 export namespace MutationResolvers {
   export interface Resolvers<Context = {}, TypeParent = {}> {
-    createUser?: CreateUserResolver<User, TypeParent, Context>;
-
     updateUser?: UpdateUserResolver<Maybe<boolean>, TypeParent, Context>;
 
     deleteUser?: DeleteUserResolver<Maybe<boolean>, TypeParent, Context>;
-  }
 
-  export type CreateUserResolver<
-    R = User,
-    Parent = {},
-    Context = {}
-  > = Resolver<R, Parent, Context, CreateUserArgs>;
-  export interface CreateUserArgs {
-    firstName: string;
-
-    profile?: Maybe<ProfileInput>;
+    register?: RegisterResolver<boolean, TypeParent, Context>;
   }
 
   export type UpdateUserResolver<
@@ -216,7 +205,7 @@ export namespace MutationResolvers {
   export interface UpdateUserArgs {
     id: number;
 
-    firstName: string;
+    firstName?: Maybe<string>;
   }
 
   export type DeleteUserResolver<
@@ -226,6 +215,17 @@ export namespace MutationResolvers {
   > = Resolver<R, Parent, Context, DeleteUserArgs>;
   export interface DeleteUserArgs {
     id: number;
+  }
+
+  export type RegisterResolver<
+    R = boolean,
+    Parent = {},
+    Context = {}
+  > = Resolver<R, Parent, Context, RegisterArgs>;
+  export interface RegisterArgs {
+    username: string;
+
+    password: string;
   }
 }
 
