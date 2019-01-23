@@ -2,42 +2,34 @@ import 'reflect-metadata';
 import { ApolloServer } from 'apollo-server-express';
 import { createConnection } from 'typeorm';
 import { importSchema } from 'graphql-import';
+import { makeExecutableSchema } from 'graphql-tools';
 import * as bcrypt from 'bcryptjs';
 import * as path from 'path';
-import * as jwt from 'jsonwebtoken';
 import { User } from './entity/User';
 import { IResolvers } from './types/schema';
 import * as express from 'express';
-import * as cookieParser from 'cookie-parser';
+import * as session from 'express-session';
 
 const SALT = 12;
-const JWT_SECRET = 'aslkdfjaklsjdflk';
-
-const typeDefs = importSchema(path.join(__dirname, './schema.graphql'));
-
-interface Request extends express.Request {
-  userId: number;
-}
+const SESSION_SECRET = 'asdklfjqo31';
 
 interface Context {
-  req: Request;
-  res: express.Response;
-  userId: number;
+  req: Express.Request;
 }
 
 const resolvers: IResolvers<Context> = {
   Query: {
     hello: (_, { name }) => `hello ${name || 'World'}`,
-    authHello: (_, __, { userId }) => {
-      if (userId) {
-        return `Cookie found! Your id is: ${userId}`;
+    authHello: (_, __, { req }) => {
+      if (req.session && req.session.userId) {
+        return `Cookie found! Your id is: ${req.session.userId}`;
       } else {
         return 'Could not find cookie :(';
       }
     }
   },
   Mutation: {
-    register: async (_, args, { res }) => {
+    register: async (_, args, { req }) => {
       const password = await bcrypt.hash(args.password, SALT);
 
       const user = User.create({
@@ -47,19 +39,9 @@ const resolvers: IResolvers<Context> = {
 
       await user.save();
 
-      const token = jwt.sign(
-        {
-          userId: user.id
-        },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      res.cookie('id', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV !== 'development',
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
-      });
+      if (req.session) {
+        req.session.userId = user.id;
+      }
 
       return true;
     }
@@ -70,23 +52,27 @@ const PORT = 4000;
 
 const app = express();
 
-app.use('/graphql', cookieParser(), (req: any, _, next) => {
-  try {
-    const { userId }: any = jwt.verify(req.cookies.id, JWT_SECRET);
-    req.userId = userId;
-  } catch (err) {
-    console.log(err);
-  }
-  return next();
-});
+app.use(
+  session({
+    name: 'qid',
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+    }
+  })
+);
+
+const typeDefs = importSchema(path.join(__dirname, './schema.graphql'));
+
+const schema = makeExecutableSchema({ typeDefs, resolvers: resolvers as any });
 
 const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context: ({ req, res }: Context) => ({
-    res,
-    userId: req.userId
-  })
+  schema,
+  context: ({ req }: { req: Express.Request }) => ({ req })
 });
 
 server.applyMiddleware({
