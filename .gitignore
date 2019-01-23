@@ -7,3 +7,4 @@ tmp/
 temp/
 ormconfig.json
 notes.md
+yarn-error.log
